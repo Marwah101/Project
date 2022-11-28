@@ -17,6 +17,7 @@ dim(data)
 ```{r}
 colnames(data)
 ```
+
 ```{r}
 new_data <- subset(data, select = -c(6))
 ```
@@ -35,6 +36,7 @@ new_data$Expected.Readmission.Rate<-replace(new_data$Expected.Readmission.Rate,n
 new_data$Number.of.Readmissions<-replace(new_data$Number.of.Readmissions,new_data$Number.of.Readmissions=="N/A","NA")
 
 ```
+
 
 ```{r}
 data1 <- subset(new_data, Number.of.Discharges != "NA")
@@ -68,27 +70,61 @@ data5
 ## group the conditions by state
 
 ```{r}
-grouped_data <- data4%>% group_by(Measure.Name)
-grouped_data
+data4$Number.of.Readmissions = as.numeric(data4$Number.of.Readmissions)
+is.numeric(data4$Number.of.Readmissions)
+data4
 
 ```
-## statistical analysis
 
 ```{r}
-data5$Measure.Name <- factor(data5$Measure.Name,levels= c(1,2,3,4,5,6),labels = c("HIP", "CABG", "AMI", "HF", "COPD","PN" ))
+library(dplyr)
 
-#is.factor(data6$Measure.Name)
-data5
-boxplot( Number.of.Readmissions~ Measure.Name, data= data5,
+data4 %>%
+  group_by(State, Measure.Name) %>%
+  summarise(Readmission_sum=sum(Number.of.Readmissions))
+```
+
+
+
+## statistical analysis
+
+
+```{r}
+
+data4$Measure.Name = as.factor(data4$Measure.Name)
+is.factor(data4$Measure.Name)
+data4
+
+
+boxplot( Number.of.Readmissions~ Measure.Name, data= data4,
         main=" Boxplot of condition vs number of readmission",
         xlab= "condition", ylab="number of readmission", col=rainbow(6),ylim=c(0,300))
 ```
 
 
+```{r}
+kruskal.test(Number.of.Readmissions ~ Measure.Name, data= data4)
+```
 
+```{r}
+tapply(data4$Number.of.Readmissions, data4$Measure.Name, median, na.rm=TRUE)
+```
 
+Ho: Median(AMI) = Median(CABG) = Median(COPD) = Median(HF) = Median(HIP) = Median(PN)
 
+Ha: At least one group median differs
 
+Test statistic: chi-squared = 2094.2
+
+P-value: 2.2 * 10^-16
+
+Conclusion(at the 0.05 alpha level): Reject Ho in favor of Ha. There is sufficient evidence to conclude that at least one group median differs.
+ 
+```{r}
+pairwise.wilcox.test(data4$Number.of.Readmissions, data4$Measure.Name, p.adjust.method="bonferroni")
+```
+
+It looks like there is significant difference across all groups.
 
 
 
